@@ -17,9 +17,6 @@ object WordCountTopology:
       .flatMapValues(wordsFromSentence)
       .to(Topics.Words)
 
-    sentences.foreach((key, value) => println(s"[SENTENCES]: \t key: $key, value: $value"))
-    words.foreach((key, value) => println(s"[WORDS]: \t key: $key, value: $value"))
-
   private def wordsFromSentence(sentence: String): List[String] =
     sentence
       .split(" ")

@@ -8,3 +8,4 @@ object Config:
   val BootstrapServers = "localhost:9092"
 
   val StreamsAppName = "streams-app"
+  val ConsumerAppName = "consumer-app"

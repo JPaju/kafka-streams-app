@@ -6,8 +6,9 @@ object Main extends ZIOAppDefault:
   val timer = ZIO.sleep(15.seconds) *> ZIO.debug("Timer expired!!")
 
   val apps = Seq(
+    StreamsApp.run,
     ProducerApp.run,
-    StreamsApp.run
+    ConsumerApp.run
   )
 
   val program = for
@@ -17,4 +18,8 @@ object Main extends ZIOAppDefault:
   yield ()
 
   val run =
-    program.provide(ProducerApp.producerLayer, Random.live)
+    program.provide(
+      ProducerApp.producerLayer,
+      ConsumerApp.consumerLayer,
+      Random.live
+    )

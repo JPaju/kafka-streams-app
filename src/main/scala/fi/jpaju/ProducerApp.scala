@@ -1,12 +1,11 @@
 package fi.jpaju
 
 import zio.*
-import zio.stream.*
 import zio.kafka.consumer.*
 import zio.kafka.producer.{Producer, ProducerSettings}
 import zio.kafka.serde.Serde
+
 import org.apache.kafka.clients.producer.ProducerRecord
-import zio.kafka.serde.Serializer
 
 object ProducerApp:
 
@@ -22,7 +21,8 @@ object ProducerApp:
     for
       sentence <- randomSentence
       record = new ProducerRecord[String, String](Topics.Sentences, sentence)
-      _ <- Producer.produce(record, Serde.string, Serde.string).debug(s"Produced sentence: $sentence")
+      _ <- Producer.produce(record, Serde.string, Serde.string)
+      _ <- ZIO.debug(s"Produced sentence: $sentence")
     yield ()
 
   private lazy val randomSentence: ZIO[Random, Nothing, String] =

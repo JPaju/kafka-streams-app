@@ -1,3 +1,5 @@
+import CompatibilityUtils._
+
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 ThisBuild / watchBeforeCommand    := Watch.clearScreen
@@ -21,17 +23,26 @@ ThisBuild / scalacOptions ++= Seq(
   "-Wconf:id=E029:error,msg=non-initialized:error,msg=spezialized:error,cat=unchecked:error" // Pattern match exhaustivity etc.
 ) ++ Seq("-source", "future")
 
-val kafkaVersion   = "3.2.0"
-val logbackVersion = "1.2.11"
+val kafkaVersion    = "3.2.0"
+val logbackVersion  = "1.2.11"
+val zioVersion      = "2.0.0-RC5"
+val zioKafkaVersion = "2.0.0-M3"
+
+val javaDependencies = Seq(
+  "org.apache.kafka" % "kafka-clients"   % kafkaVersion,
+  "org.apache.kafka" % "kafka-streams"   % kafkaVersion,
+  "ch.qos.logback"   % "logback-classic" % logbackVersion
+)
+
+val scalaDependencies = Seq(
+  use2_13ExcludeScalaModules("org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion),
+  "dev.zio" %% "zio-test"  % zioVersion,
+  "dev.zio" %% "zio-kafka" % zioKafkaVersion
+)
 
 lazy val root =
   project
     .in(file("."))
     .settings(
-      libraryDependencies ++= Seq(
-        "org.apache.kafka"   % "kafka-clients"       % kafkaVersion,
-        "org.apache.kafka"   % "kafka-streams"       % kafkaVersion,
-        ("org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion).cross(CrossVersion.for3Use2_13),
-        "ch.qos.logback"     % "logback-classic"     % logbackVersion
-      )
+      libraryDependencies ++= javaDependencies ++ scalaDependencies
     )

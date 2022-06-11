@@ -1,12 +1,13 @@
 package fi.jpaju
 
-import scala.io.StdIn
+import zio.*
 
-object Main extends App:
+object Main extends ZIOAppDefault:
+  val program = for
+    _ <- ZIO.debug("Starting program")
+    _ <- ProducerApp.run
+    _ <- ZIO.debug("Stopping program")
+  yield ()
 
-  println("Starting streams app")
-  StreamsApp.run()
-  println("Streams app started")
-
-  StdIn.readLine()
-  println("Exiting app")
+  val run =
+    program.provide(ProducerApp.producerLayer, Random.live)

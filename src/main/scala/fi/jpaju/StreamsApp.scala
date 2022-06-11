@@ -2,9 +2,10 @@ package fi.jpaju
 
 import java.util.Properties
 
+import zio.*
+
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.streams.{StreamsConfig, StreamsBuilder, KafkaStreams, Topology}
-import org.apache.kafka.streams.kstream
 
 object WordCountTopology:
   def add(builder: StreamsBuilder): Unit =
@@ -29,15 +30,29 @@ object WordCountTopology:
 end WordCountTopology
 
 object StreamsApp:
-  def run(): Unit =
+
+  def run: Task[Nothing] =
+    ZIO.scoped {
+      scopedApp.flatMap(app =>
+        ZIO.attempt(app.start()) *>
+          ZIO.debug("Streams app started") *>
+          ZIO.never
+      )
+    }
+
+  private def scopedApp: ZIO[Scope, Throwable, KafkaStreams] =
+    ZIO.acquireRelease(
+      streamsApp
+    )(streamsApp => ZIO.debug("Shutting down streams app") *> ZIO.attempt(streamsApp.close()).orDie)
+
+  private def streamsApp: Task[KafkaStreams] = ZIO.attempt {
     val topology = createTopology
     val props    = createProperties
 
     println(topology.describe())
 
-    val streams = new KafkaStreams(topology, props)
-    addShutdownHook(streams)
-    streams.start()
+    new KafkaStreams(topology, props)
+  }
 
   private def createProperties: Properties =
     val props = new Properties()
@@ -55,14 +70,3 @@ object StreamsApp:
 
     builder.build()
   end createTopology
-
-  private def addShutdownHook(streams: KafkaStreams): Unit =
-    Runtime
-      .getRuntime()
-      .addShutdownHook(
-        new Thread(() =>
-          println("Shutting down streams app")
-          streams.close()
-        )
-      )
-  end addShutdownHook

@@ -36,7 +36,6 @@ val javaDependencies = Seq(
 
 val scalaDependencies = Seq(
   use2_13ExcludeScalaModules("org.apache.kafka" %% "kafka-streams-scala" % kafkaVersion),
-  "dev.zio" %% "zio-test"  % zioVersion,
   "dev.zio" %% "zio-kafka" % zioKafkaVersion
 )
 

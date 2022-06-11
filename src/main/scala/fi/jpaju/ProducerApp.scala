@@ -9,15 +9,18 @@ import org.apache.kafka.clients.producer.ProducerRecord
 
 object ProducerApp:
 
-  lazy val run =
-    (produceRandomSentence *> Random.nextIntBetween(500, 1500).flatMap(ms => ZIO.sleep(ms.millis))).forever
-
   val producerSettings = ProducerSettings(List(Config.BootstrapServers))
-
   val producerLayer: ZLayer[Any, Throwable, Producer] =
     ZLayer.scoped(Producer.make(producerSettings))
 
-  private lazy val produceRandomSentence: ZIO[Random & Producer, Throwable, Unit] =
+  val producerDelay = delayBetween(500, 1500) *> maybeDelayBetween(3000, 5000)
+  def run: ZIO[Random & Producer, Throwable, Nothing] =
+    (produceRandomSentence *> producerDelay).forever
+
+  private val produceRandomSentence: ZIO[Random & Producer, Throwable, Unit] =
+    val randomSentence: ZIO[Random, Nothing, String] =
+      Random.nextIntBetween(0, sentences.size).map(sentences)
+
     for
       sentence <- randomSentence
       record = new ProducerRecord[String, String](Topics.Sentences, sentence)
@@ -25,8 +28,14 @@ object ProducerApp:
       _ <- ZIO.debug(s"Produced sentence: $sentence")
     yield ()
 
-  private lazy val randomSentence: ZIO[Random, Nothing, String] =
-    Random.nextIntBetween(0, sentences.size).map(sentences)
+  private def maybeDelayBetween(minMs: Int, maxMs: Int): URIO[Random, Unit] =
+    Random.nextBoolean.flatMap(shouldDelay =>
+      if shouldDelay then delayBetween(minMs, maxMs)
+      else ZIO.unit
+    )
+
+  private def delayBetween(minMs: Int, maxMs: Int): URIO[Random, Unit] =
+    Random.nextIntBetween(minMs, maxMs).flatMap(delay => ZIO.sleep(delay.millis))
 
   private lazy val sentences = Vector(
     "As the asteroid hurtled toward earth, Becky was upset her dentist appointment had been canceled.",

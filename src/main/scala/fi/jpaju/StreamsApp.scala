@@ -6,16 +6,28 @@ import zio.*
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.streams.{StreamsConfig, StreamsBuilder, KafkaStreams, Topology}
+import org.apache.kafka.streams.kstream.Named
 
 object WordCountTopology:
   def add(builder: StreamsBuilder): Unit =
 
-    val sentences: KStream[String, String] = builder.stream[String, String](Topics.Sentences)
-    val words: KStream[String, String]     = builder.stream(Topics.Words)
+    val sentences: KStream[Null, String] = builder.stream(Topics.Sentences)
 
-    sentences
-      .flatMapValues(wordsFromSentence)
-      .to(Topics.Words)
+    val words: KStream[String, String] =
+      sentences
+        .flatMapValues(sentence => wordsFromSentence(sentence))
+        .selectKey((_, word) => word)
+
+    val articles = Set("the", "a", "an")
+    val wordCountTable: KTable[String, Long] =
+      words
+        .filter((_, word) => !articles.contains(word))
+        .groupByKey
+        .count(Named.as("Word_Count_Table"))
+
+    wordCountTable
+      .toStream(Named.as("Word_Count_Stream"))
+      .to(Topics.WordCounts)
 
   private def wordsFromSentence(sentence: String): List[String] =
     sentence
@@ -57,6 +69,7 @@ object StreamsApp:
     props.put(StreamsConfig.BOOTSTRAP_SERVERS_CONFIG, Config.BootstrapServers)
     props.put(StreamsConfig.DEFAULT_VALUE_SERDE_CLASS_CONFIG, Serdes.stringSerde.getClass)
     props.put(StreamsConfig.DEFAULT_KEY_SERDE_CLASS_CONFIG, Serdes.stringSerde.getClass)
+    props.put(StreamsConfig.COMMIT_INTERVAL_MS_CONFIG, 3000)
     props
   end createProperties
 

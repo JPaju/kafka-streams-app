@@ -15,13 +15,13 @@ object ConsumerApp:
   private val consumer = Consumer.make(consumerSettings)
   val consumerLayer    = ZLayer.scoped(consumer)
 
-  private val subscription = Subscription.topics(Topics.Words)
+  private val subscription = Subscription.topics(Topics.WordCounts)
 
   val run: ZIO[Consumer, Throwable, Unit] =
     Consumer
       .subscribeAnd(subscription)
-      .plainStream(Serde.string, Serde.string)
-      .tap(record => ZIO.debug(s"[Consumer, WORD]:  ${record.value}"))
+      .plainStream(Serde.string, Serde.long)
+      .tap(record => ZIO.debug(s"[Consumer] Word: ${record.key}, count: ${record.value}"))
       .map(_.offset)
       .aggregateAsync(Consumer.offsetBatches)
       .mapZIO(_.commit)

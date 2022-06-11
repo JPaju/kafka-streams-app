@@ -1,9 +1,10 @@
 package fi.jpaju
 
 object Topics:
-  val Sentences  = "sentences"
-  val Words      = "words"
-  val WordCounts = "word-counts"
+  val Sentences        = "sentences"
+  val Words            = "words"
+  val WordCounts       = "word-counts"
+  val CommonWordCounts = "common-word-counts"
 
 object Config:
   val BootstrapServers = "localhost:9092"

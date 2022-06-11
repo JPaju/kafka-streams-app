@@ -6,10 +6,12 @@ import zio.*
 
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.streams.{StreamsConfig, StreamsBuilder, KafkaStreams, Topology}
-import org.apache.kafka.streams.kstream.Named
+import org.apache.kafka.streams.kstream.{Named, TimeWindows}
+import org.apache.kafka.streams.scala.kstream.KGroupedStream
 
 object WordCountTopology:
   def add(builder: StreamsBuilder): Unit =
+    val articles = Set("the", "a", "an")
 
     val sentences: KStream[Null, String] = builder.stream(Topics.Sentences)
 
@@ -18,16 +20,28 @@ object WordCountTopology:
         .flatMapValues(sentence => wordsFromSentence(sentence))
         .selectKey((_, word) => word)
 
-    val articles = Set("the", "a", "an")
-    val wordCountTable: KTable[String, Long] =
-      words
-        .filter((_, word) => !articles.contains(word))
-        .groupByKey
-        .count(Named.as("Word_Count_Table"))
+    val wordsGrouped: KGroupedStream[String, String] = words
+      .filter((_, word) => !articles.contains(word))
+      .groupByKey
 
-    wordCountTable
+    wordsGrouped
+      .count(Named.as("Word_Count_Table"))
       .toStream(Named.as("Word_Count_Stream"))
       .to(Topics.WordCounts)
+
+    // Creates tumbling window like this:
+    // | -- 20s -- |
+    //             | -- 20s -- |
+    //                         | -- 20s -- |
+    val windowSize     = java.time.Duration.ofSeconds(20)
+    val tumblingWindow = TimeWindows.ofSizeWithNoGrace(windowSize)
+    wordsGrouped
+      .windowedBy(tumblingWindow)
+      .count(Named.as("Windowed_Word_Count"))
+      .filter((_, count) => count > 3)
+      .toStream
+      .map[String, Long]((windowed, count) => windowed.key() -> count)
+      .to(Topics.CommonWordCounts)
 
   private def wordsFromSentence(sentence: String): List[String] =
     sentence

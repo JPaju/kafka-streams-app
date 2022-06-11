@@ -15,7 +15,7 @@ object ConsumerApp:
   private val consumer = Consumer.make(consumerSettings)
   val consumerLayer    = ZLayer.scoped(consumer)
 
-  private val subscription = Subscription.topics(Topics.WordCounts)
+  private val subscription = Subscription.topics(Topics.CommonWordCounts)
 
   val run: ZIO[Consumer, Throwable, Unit] =
     Consumer

@@ -7,7 +7,7 @@
 
 ## Priority things
 - [x] Produce & consume something
-- [ ] Use streams API to join, aggregate etc.
+- [x] Use streams API to join, aggregate etc.
 - [x] Create producer that randomly produces data
 - [x] Use ZIO Kafka to create producer and consumer
 - [ ] Configure Streams to create topic if it doesn't exist
@@ -16,6 +16,8 @@
 
 ## Nice to have things
 - [ ] Use Schema registry and Avro
+- [ ] Unit testing with TopologyTestDriver
+- [ ] Integration tests with test-containers
 
 
 ## API docs

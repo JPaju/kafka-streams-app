@@ -1,0 +1,7 @@
+{
+	"files.watcherExclude": {
+		"**/target": true
+	},
+	"editor.tabSize": 2,
+	"editor.insertSpaces": true
+}
